@@ -8,10 +8,8 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Vaihda tähän oma Netlify-sivusi osoite
-REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="
+REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="  # korvaa omallasi
 
-# Tunnistaa linkit viestistä
 url_pattern = re.compile(r'((?:https?|steam)://[^\s]+)')
 
 @bot.event
@@ -21,13 +19,11 @@ async def on_ready():
 @bot.event
 async def on_message(message):
     if message.author.bot:
-        return  # ei reagoi toisiin botteihin
+        return
 
     match = url_pattern.search(message.content)
     if match:
         url = match.group(1)
-
-        # Jos linkki on Steam-linkki, luodaan Join-nappi
         if url.startswith("steam://"):
             encoded = urllib.parse.quote(url, safe='')
             redirect_url = f"{REDIRECT_BASE_URL}{encoded}"
@@ -45,7 +41,6 @@ async def on_message(message):
                 view=view
             )
 
-            # Poistetaan alkuperäinen viesti (valinnainen)
             await message.delete()
 
     await bot.process_commands(message)
