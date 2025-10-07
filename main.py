@@ -6,7 +6,9 @@ import os
 
 # --- BOTIN ASETUKSET ---
 intents = discord.Intents.default()
-intents.message_content = True  # tarvitaan, jotta botti näkee viestien sisällön
+intents.message_content = True  # jotta botti näkee viestien sisällön
+intents.guilds = True
+intents.messages = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
 # --- MUUTA TÄMÄ OMAKSI NETLIFY-SIVUKSEKSI ---
@@ -14,6 +16,9 @@ REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="
 
 # Etsi steam:// linkit
 url_pattern = re.compile(r'((?:https?|steam):\/\/[^\s]+)')
+
+# Luodaan lista viesteistä, jotka on jo käsitelty
+processed_messages = set()
 
 # --- BOTTI KÄYNNISTYY ---
 @bot.event
@@ -26,6 +31,11 @@ async def on_message(message):
     # älä reagoi botin omiin viesteihin
     if message.author.bot:
         return
+
+    # älä reagoi samaan viestiin kahdesti
+    if message.id in processed_messages:
+        return
+    processed_messages.add(message.id)
 
     match = url_pattern.search(message.content)
     if match:
