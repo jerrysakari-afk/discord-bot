@@ -4,51 +4,44 @@ import discord
 from discord.ext import commands
 import os
 
-# --- BOTIN ASETUKSET ---
 intents = discord.Intents.default()
-intents.message_content = True  # jotta botti näkee viestien sisällön
-intents.guilds = True
-intents.messages = True
+intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# --- MUUTA TÄMÄ OMAKSI NETLIFY-SIVUKSEKSI ---
-REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="
+REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="  # korvaa omallasi
 
-# Etsi steam:// linkit
-url_pattern = re.compile(r'((?:https?|steam):\/\/[^\s]+)')
+# Tämä tunnistaa vain Steam joinlobby -linkit
+url_pattern = re.compile(r"(steam://joinlobby/[^\s]+)")
 
-# Luodaan lista viesteistä, jotka on jo käsitelty
-processed_messages = set()
+# Pidetään kirjaa viesteistä, jotka on jo käsitelty
+processed = set()
 
-# --- BOTTI KÄYNNISTYY ---
 @bot.event
 async def on_ready():
     print(f"✅ Kirjauduttu sisään käyttäjänä: {bot.user}")
 
-# --- KUUNTELEE VIESTEJÄ ---
 @bot.event
 async def on_message(message):
-    # älä reagoi botin omiin viesteihin
+    # Ei reagoi omiin viesteihin
     if message.author.bot:
         return
 
-    # älä reagoi samaan viestiin kahdesti
-    if message.id in processed_messages:
+    # Estä tuplat (jos sama viesti käsitellään uudelleen)
+    if message.id in processed:
         return
-    processed_messages.add(message.id)
+    processed.add(message.id)
 
-    match = url_pattern.search(message.content)
-    if match:
-        url = match.group(1)
+    # Etsi Steam-linkit
+    matches = url_pattern.findall(message.content)
+    if not matches:
+        return
 
-        # käsittele vain oikeat steam://joinlobby linkit
-        if not url.startswith("steam://joinlobby/"):
-            return
-
+    # Käydään läpi kaikki linkit viestissä
+    for url in matches:
         encoded = urllib.parse.quote(url, safe="")
         redirect_url = f"{REDIRECT_BASE_URL}{encoded}"
 
-        # luodaan join-nappi
+        # Tee Join-nappi
         view = discord.ui.View()
         button = discord.ui.Button(
             label="Join Game 🎮",
@@ -57,22 +50,14 @@ async def on_message(message):
         )
         view.add_item(button)
 
-        # lähetä vain yksi viesti
         await message.channel.send(
             f"🎮 {message.author.mention} shared a Steam lobby:",
             view=view
         )
 
-        return
-
-    # anna muiden komentojen toimia
-    await bot.process_commands(message)
-
-
-# --- KÄYNNISTYS ---
 TOKEN = os.getenv("TOKEN")
 if TOKEN is None:
-    print("❌ Virhe: TOKEN ei ole asetettu ympäristömuuttujaksi Renderissä!")
+    print("❌ Virhe: TOKEN ei ole asetettu Renderissä!")
 else:
     bot.run(TOKEN)
 
