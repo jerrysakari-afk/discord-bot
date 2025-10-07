@@ -4,21 +4,34 @@ import discord
 from discord.ext import commands
 import os
 
+# 🔧 TÄMÄ ON OLEELLINEN OSA
+# Discord vaatii nykyään kaikki "intentit" määritettäväksi erikseen,
+# muuten botti ei saa viestien sisältöä eikä käyttäjien tietoja.
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
+intents.presences = True
+
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-REDIRECT_BASE_URL = "https://OMA-NETLIFY-SIVU.netlify.app/?link="  # korvaa omallasi
+# Vaihda oma Netlify-linkkisi tähän
+REDIRECT_BASE_URL = "https://tourmaline-lolly-4c1df2.netlify.app/?link="
+
 
 url_pattern = re.compile(r"(steam://joinlobby/[^\s]+)")
 processed = set()
+
 
 @bot.event
 async def on_ready():
     print(f"✅ Kirjauduttu sisään käyttäjänä: {bot.user}")
 
+
 @bot.event
 async def on_message(message):
+    # Debug-tuloste, jotta näemme logista saako botti viestin ylipäätään
+    print(f"💬 Viesti havaittu: {message.content}")
+
     if message.author.bot:
         return
 
@@ -46,6 +59,7 @@ async def on_message(message):
             f"🎮 {message.author.mention} shared a Steam lobby:",
             view=view
         )
+
 
 TOKEN = os.getenv("TOKEN")
 if TOKEN is None:
