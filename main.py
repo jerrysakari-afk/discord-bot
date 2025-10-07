@@ -60,4 +60,3 @@ if TOKEN is None:
     print("❌ Virhe: TOKEN ei ole asetettu Renderissä!")
 else:
     bot.run(TOKEN)
-
