@@ -3,35 +3,27 @@ import urllib.parse
 import discord
 from discord.ext import commands
 import os
-import threading
 from flask import Flask
+import threading
 
-# --- Keepalive-palvelin Renderin ilmaisversiota varten ---
-app = Flask('')
+# --- Flask pitää Renderin "elossa"
+app = Flask(__name__)
 
 @app.route('/')
 def home():
     return "Bot is alive!"
 
-def run():
-    app.run(host='0.0.0.0', port=8080)
+def run_flask():
+    app.run(host="0.0.0.0", port=8080)
 
-def keep_alive():
-    t = threading.Thread(target=run)
-    t.start()
+threading.Thread(target=run_flask).start()
 
-# --- Discord-botin asetukset ---
+# --- Discord botti alkaa tästä
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
-intents.presences = True
-
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# --- Netlify redirect (vaihda oma osoite tähän) ---
 REDIRECT_BASE_URL = "https://tourmaline-lolly-4c1df2.netlify.app/?link="
-
-# Etsi vain Steam joinlobby -linkit
 url_pattern = re.compile(r"(steam://joinlobby/[^\s]+)")
 processed = set()
 
@@ -41,8 +33,6 @@ async def on_ready():
 
 @bot.event
 async def on_message(message):
-    print(f"💬 Viesti havaittu: {message.content}")
-
     if message.author.bot:
         return
 
@@ -71,12 +61,8 @@ async def on_message(message):
             view=view
         )
 
-# --- Käynnistys ---
 TOKEN = os.getenv("TOKEN")
 if TOKEN is None:
     print("❌ Virhe: TOKEN ei ole asetettu Renderissä!")
 else:
-    keep_alive()  # tämä pitää botin hengissä Renderissä
     bot.run(TOKEN)
-
-
